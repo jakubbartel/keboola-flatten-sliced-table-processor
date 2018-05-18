@@ -6,7 +6,7 @@ Simply loops over all directories with manifest in /data/in/tables/, other direc
 output.
 
 Output structure is flattened, e.g. `file.csv/slice1` is transformed to `file-slice1.csv`. To prevent duplications
-names of output files will contain escaped character `-` by `--`, e.g. `file-1.csv/slice1` to `file--1-slice1.csv`.
+names of output files will contain escaped character `-` by `--`, e.g. `file-1.csv/slice-1` to `file--1-slice--1.csv`.
 
 Output csv files will contain header row taken from source csv's manifest.
 
