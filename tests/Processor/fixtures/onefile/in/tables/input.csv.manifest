@@ -1,0 +1,20 @@
+{
+    "id": "in.c-default.data",
+    "uri": "https://connection.keboola.com/v2/storage/tables/in.c-default.data",
+    "name": "data",
+    "primary_key": [],
+    "created": "2015-01-25T01:35:14+0100",
+    "last_change_date": "2015-01-25T01:35:14+0100",
+    "last_import_date": "2015-01-25T01:35:14+0100",
+    "columns": [
+        "city",
+        "date",
+        "precipitation"
+    ],
+    "metadata": [],
+    "column_metadata": {
+        "id": [],
+        "name": [],
+        "text": []
+    }
+}
