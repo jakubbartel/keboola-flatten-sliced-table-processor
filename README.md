@@ -16,7 +16,7 @@ Example processor configuration - there are no explicit parameters:
 ```
 {
     "definition": {
-        "component": "jakub-bartel.processor-split-by-value"
+        "component": "jakub-bartel.processor-flatten-sliced-table"
     }
 }
 ```
