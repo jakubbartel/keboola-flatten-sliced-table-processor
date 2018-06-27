@@ -6,6 +6,8 @@ use Keboola\Component\Manifest\ManifestManager;
 use Keboola\Csv;
 use Keboola\FlattenSlicedTableProcessor\Exception\UserException;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 class Processor
 {
@@ -67,14 +69,49 @@ class Processor
      * @return Processor
      * @throws Csv\InvalidArgumentException
      * @throws Csv\Exception
+     * @throws Exception\FileAppendException
      */
     private function copyCsvWithHeader(string $sourcePath, string $destinationPath, array $header): self
+    {
+        return $this
+            ->createCsvHeader($destinationPath, $header)
+            ->appendCsvBody($sourcePath, $destinationPath);
+    }
+
+    /**
+     * @param string $destinationPath
+     * @param array $header
+     * @return Processor
+     * @throws Csv\Exception
+     * @throws Csv\InvalidArgumentException
+     */
+    private function createCsvHeader(string $destinationPath, array $header): self
     {
         $csvFile = new Csv\CsvFile($destinationPath);
 
         $csvFile->writeRow($header);
 
-        file_put_contents($destinationPath, file_get_contents($sourcePath), FILE_APPEND);
+        unset($csvFile);
+
+        return $this;
+    }
+
+    /**
+     * @param string $sourcePath
+     * @param string $destinationPath
+     * @return Processor
+     * @throws Exception\FileAppendException
+     */
+    private function appendCsvBody(string $sourcePath, string $destinationPath): self
+    {
+        $cmd = sprintf("cat %s >> %s", $sourcePath, $destinationPath);
+
+        $process = new Process($cmd);
+        try {
+            $process->mustRun();
+        } catch(ProcessFailedException $e) {
+            throw new Exception\FileAppendException(sprintf("Cannot append to output file, \"%s\"", $e->getMessage()));
+        }
 
         return $this;
     }
@@ -87,6 +124,7 @@ class Processor
      * @throws UserException
      * @throws Csv\InvalidArgumentException
      * @throws Csv\Exception
+     * @throws Exception\FileAppendException
      */
     public function processFile(string $inFileDirPath, string $slicedFileName, string $outFilesDirPath): self
     {
@@ -128,6 +166,7 @@ class Processor
      * @throws UserException
      * @throws Csv\InvalidArgumentException
      * @throws Csv\Exception
+     * @throws Exception\FileAppendException
      */
     public function processDir(string $inFilesDirPath, string $outFilesDirPath): self
     {

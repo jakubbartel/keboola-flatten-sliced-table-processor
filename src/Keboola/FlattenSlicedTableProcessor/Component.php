@@ -19,6 +19,7 @@ class Component extends BaseComponent
     /**
      *
      * @throws \Keboola\Csv\Exception
+     * @throws Exception\FileAppendException
      */
     public function run() : void
     {
