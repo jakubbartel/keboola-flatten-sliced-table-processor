@@ -6,8 +6,6 @@ use Keboola\Component\Manifest\ManifestManager;
 use Keboola\Csv;
 use Keboola\FlattenSlicedTableProcessor\Exception\UserException;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
 
 class Processor
 {
@@ -73,44 +71,57 @@ class Processor
      */
     private function copyCsvWithHeader(string $sourcePath, string $destinationPath, array $header): self
     {
-        return $this
-            ->createCsvHeader($destinationPath, $header)
-            ->appendCsvBody($sourcePath, $destinationPath);
-    }
+        $file = fopen($destinationPath, 'a');
 
-    /**
-     * @param string $destinationPath
-     * @param array $header
-     * @return Processor
-     * @throws Csv\Exception
-     * @throws Csv\InvalidArgumentException
-     */
-    private function createCsvHeader(string $destinationPath, array $header): self
-    {
-        $csvFile = new Csv\CsvFile($destinationPath);
+        if($file == false) {
+            throw new Exception\FileAppendException('Cannot open destination file');
+        }
 
-        $csvFile->writeRow($header);
+        $this
+            ->appendCsvHeader($file, $header)
+            ->appendCsvBody($file, $sourcePath);
 
-        unset($csvFile);
+        if(fclose($file) == false) {
+            throw new Exception\FileAppendException('Error while closing destination file');
+        }
 
         return $this;
     }
 
     /**
+     * @param resource $file
+     * @param array $header
+     * @return Processor
+     * @throws Csv\Exception
+     * @throws Csv\InvalidArgumentException
+     */
+    private function appendCsvHeader($file, array $header): self
+    {
+        $csvFile = new Csv\CsvWriter($file);
+
+        $csvFile->writeRow($header);
+
+        return $this;
+    }
+
+    /**
+     * @param resource $file
      * @param string $sourcePath
-     * @param string $destinationPath
      * @return Processor
      * @throws Exception\FileAppendException
      */
-    private function appendCsvBody(string $sourcePath, string $destinationPath): self
+    private function appendCsvBody($file, string $sourcePath): self
     {
-        $cmd = sprintf("cat %s >> %s", $sourcePath, $destinationPath);
+        $source = fopen($sourcePath, 'r');
 
-        $process = new Process($cmd);
-        try {
-            $process->mustRun();
-        } catch(ProcessFailedException $e) {
-            throw new Exception\FileAppendException(sprintf("Cannot append to output file, \"%s\"", $e->getMessage()));
+        if($source === false) {
+            throw new Exception\FileAppendException('Cannot open copied file');
+        }
+
+        $copied = stream_copy_to_stream($source, $file);
+
+        if($copied === false) {
+            throw new Exception\FileAppendException('Cannot copy the source file stream to the destination file');
         }
 
         return $this;
